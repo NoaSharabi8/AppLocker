@@ -51,7 +51,7 @@ public class MainActivity extends AppCompatActivity {
             Manifest.permission.RECORD_AUDIO
     };
     private static final int REQUEST_IMAGE_CAPTURE = 123;
-    private final String TARGET_PHONE = "0543388621";
+    private final String TARGET_PHONE = "0540000000";
     private boolean isListening = false;
     private SpeechRecognizer speechRecognizer;
     private Intent speechIntent;
@@ -263,7 +263,7 @@ public class MainActivity extends AppCompatActivity {
         if (redRatio > 0.4) { // לפחות 40% מהתמונה באדום
             changeCircleColor(BTN3, Color.GREEN);
             activeNextStage(BTN3, BTN4);
-            Toast.makeText(this, "משימה 4 הושלמה בהצלחה", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "משימה 3 הושלמה בהצלחה", Toast.LENGTH_SHORT).show();
         } else {
             changeCircleColor(BTN3, Color.RED);
             Toast.makeText(this, "הצבע האדום לא דומיננטי מספיק. אנא נסה שנית", Toast.LENGTH_SHORT).show();
