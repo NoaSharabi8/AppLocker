@@ -51,7 +51,7 @@ public class MainActivity extends AppCompatActivity {
             Manifest.permission.RECORD_AUDIO
     };
     private static final int REQUEST_IMAGE_CAPTURE = 123;
-    private final String TARGET_PHONE = "0540000000";
+    private final String TARGET_PHONE = "0543388621";
     private boolean isListening = false;
     private SpeechRecognizer speechRecognizer;
     private Intent speechIntent;
