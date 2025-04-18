@@ -28,13 +28,13 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import android.Manifest;
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
     private Button BTN1;
@@ -42,8 +42,14 @@ public class MainActivity extends AppCompatActivity {
     private Button BTN3;
     private Button BTN4;
     private Button BTN5;
-    private static final int REQUEST_CONTACT_PERMISSION = 1;
-    private static final int REQUEST_SMS_PERMISSION = 2;
+    private static final int REQUEST_ALL_PERMISSIONS = 999;
+    private static final String[] REQUIRED_PERMISSIONS = new String[] {
+            Manifest.permission.READ_CONTACTS,
+            Manifest.permission.CAMERA,
+            Manifest.permission.RECEIVE_SMS,
+            Manifest.permission.READ_SMS,
+            Manifest.permission.RECORD_AUDIO
+    };
     private static final int REQUEST_IMAGE_CAPTURE = 123;
     private final String TARGET_PHONE = "0540000000";
     private boolean isListening = false;
@@ -56,7 +62,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        checkPermissions();
+        requestPermissions();
         findViews();
         initViews();
     }
@@ -67,6 +73,10 @@ public class MainActivity extends AppCompatActivity {
         BTN4=findViewById(R.id.circle4);
         BTN5=findViewById(R.id.circle5);
         mp = MediaPlayer.create(this, R.raw.claps);
+        speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this);
+        speechIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+        speechIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+        speechIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "he-IL"); // עברית
     }
     private void initViews() {
         BTN1.setOnClickListener(v -> batteryGuessDialog());
@@ -83,58 +93,19 @@ public class MainActivity extends AppCompatActivity {
             endGame();
         });
     }
-    private void checkPermissions() {
-        //contacts
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS)
-                != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.READ_CONTACTS},
-                    REQUEST_CONTACT_PERMISSION);
-        }
-        //camera
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
-                != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.CAMERA},
-                    202); // מזהה לבחירתך
-        }
-        //sms
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECEIVE_SMS) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.RECEIVE_SMS, Manifest.permission.READ_SMS},
-                    REQUEST_SMS_PERMISSION);
-        }
-        //record
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.RECORD_AUDIO},
-                    101); // או כל מספר מזהה
-        }
-        speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this);
-        speechIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-        speechIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-        speechIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "he-IL"); // עברית
-    }
-    @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           @NonNull String[] permissions,
-                                           @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    private void requestPermissions() {
+        List<String> missingPermissions = new ArrayList<>();
 
-        if (requestCode == REQUEST_CONTACT_PERMISSION) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                findContactByPhone();
-            } else {
-                Toast.makeText(this, "נדרשת הרשאה לגשת לאנשי הקשר", Toast.LENGTH_SHORT).show();
+        for (String permission : REQUIRED_PERMISSIONS) {
+            if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
+                missingPermissions.add(permission);
             }
         }
 
-        if (requestCode == REQUEST_SMS_PERMISSION) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Toast.makeText(this, "הרשאת SMS אושרה", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(this, "נדרשת הרשאת SMS כדי להמשיך", Toast.LENGTH_SHORT).show();
-            }
+        if (!missingPermissions.isEmpty()) {
+            ActivityCompat.requestPermissions(this,
+                    missingPermissions.toArray(new String[0]),
+                    REQUEST_ALL_PERMISSIONS);
         }
     }
     private void changeCircleColor(View button, int color) {
@@ -228,7 +199,6 @@ public class MainActivity extends AppCompatActivity {
         builder.setNegativeButton("ביטול", null);
         builder.show();
     }
-
     private void dispatchTakePictureIntent() {
         Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         photoUri = createImageUri();
@@ -388,9 +358,6 @@ public class MainActivity extends AppCompatActivity {
 
                 if (matches != null) {
                     for (String result : matches) {
-//                        Log.d("SpeechResult", "תוצאה: " + result);
-//                        Toast.makeText(MainActivity.this, "שמענו: " + result, Toast.LENGTH_LONG).show();
-
                         String normalized = result.toLowerCase().replaceAll("[^א-ת ]", "");
 
                         if (
